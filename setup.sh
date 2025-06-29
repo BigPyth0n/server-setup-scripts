@@ -33,10 +33,12 @@ install_prerequisites() {
 # 🧹 پاکسازی داکر
 cleanup_docker() {
     log_warning "Stopping and removing all Docker containers, volumes, and networks..."
-    docker stop $(docker ps -q) 2>/dev/null || true
-    docker rm -f $(docker ps -a -q) 2>/dev/null || true
-    docker volume prune -f
-    docker network prune -f
+    docker ps -q | xargs -r docker stop
+    docker ps -a -q | xargs -r docker rm -f
+    docker volume ls -q | xargs -r docker volume rm
+    docker network ls -q | grep -v 'bridge\|host\|none' | xargs -r docker network rm
+    docker image prune -af --filter "dangling=true"
+    docker system prune -f --volumes
     log_success "Docker cleanup completed."
 }
 
@@ -151,6 +153,7 @@ final_summary() {
     echo ""
     echo -e "${YELLOW}>> Speedtest Tracker:${NC}"
     echo "   - URL: http://$PUBLIC_IP:8765"
+    echo "   - در اولین ورود، حساب ادمین خود را بسازید."
     echo "   - دیتابیس SQLite داخلی استفاده شده (بدون نیاز به MySQL)"
     echo "   - رابط گرافیکی برای مشاهده تاریخچه تست سرعت"
 
