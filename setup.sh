@@ -2,6 +2,9 @@
 set -e
 set -o pipefail
 
+echo -e "\n\033[1;36m🛰️  KitServer Setup Script (Latest Version Loaded) - $(date +'%Y-%m-%d %H:%M:%S')\033[0m\n"
+
+
 # 🎨 رنگ‌ها
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
