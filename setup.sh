@@ -151,7 +151,7 @@ final_summary() {
     echo ""
     echo -e "${YELLOW}>> Speedtest Tracker:${NC}"
     echo "   - URL: http://$PUBLIC_IP:8765"
-    echo "   - برای اولین ورود، ثبت‌نام کرده و اکانت بسازید."
+    echo "   - در اولین ورود، حساب خود را بسازید (نام کاربری و رمز عبور دلخواه)."
     echo "   - دیتابیس SQLite داخلی استفاده شده (بدون نیاز به MySQL)"
 
     echo ""
