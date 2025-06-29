@@ -2,18 +2,17 @@
 set -e
 set -o pipefail
 
-# رنگ‌ها
+# 🎨 رنگ‌ها
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# لاگ
-log_info() { echo -e "${BLUE}INFO: $1${NC}"; }
+log_info()    { echo -e "${BLUE}INFO: $1${NC}"; }
 log_success() { echo -e "${GREEN}SUCCESS: $1${NC}"; }
 log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
-# 🔧 اصلاح /etc/hosts
+# 🛠 رفع مشکل hostname در /etc/hosts
 fix_hostname_resolution() {
     local HOSTNAME=$(hostname)
     if ! grep -q "$HOSTNAME" /etc/hosts; then
@@ -23,26 +22,28 @@ fix_hostname_resolution() {
     fi
 }
 
-# 📦 نصب ابزار پایه
+# 📦 نصب ابزارهای پایه
 install_prerequisites() {
     log_info "Installing system prerequisites..."
     apt-get update -y
     apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip git python3-pip nano tmux
 }
 
-# 🧹 پاکسازی داکر
+# 🧹 پاک‌سازی ایمن Docker
 cleanup_docker() {
-    log_warning "Stopping and removing all Docker containers, volumes, and networks..."
+    log_warning "Stopping and removing all Docker containers, volumes, images, and user-defined networks..."
+
     docker ps -q | xargs -r docker stop
     docker ps -a -q | xargs -r docker rm -f
     docker volume ls -q | xargs -r docker volume rm
-    docker network ls -q | grep -v 'bridge\|host\|none' | xargs -r docker network rm
     docker image prune -af --filter "dangling=true"
+    docker network ls --filter "type=custom" -q | xargs -r docker network rm
     docker system prune -f --volumes
+
     log_success "Docker cleanup completed."
 }
 
-# 🐳 نصب Docker
+# 🐳 نصب Docker (در صورت نیاز)
 install_docker() {
     if command -v docker &> /dev/null; then
         log_success "Docker is already installed."
@@ -62,9 +63,9 @@ install_docker() {
     log_success "Docker installed and running."
 }
 
-# 📦 Code-Server
+# ▶️ نصب Code-Server
 install_code_server() {
-    log_info "Deploying code-server container..."
+    log_info "Deploying Code-Server container..."
     docker volume create code-server-config >/dev/null 2>&1 || true
     docker run -d \
       --name=code-server \
@@ -77,7 +78,7 @@ install_code_server() {
     log_success "Code-Server is up."
 }
 
-# 📦 Nginx Proxy Manager
+# ▶️ نصب Nginx Proxy Manager
 install_npm() {
     log_info "Deploying Nginx Proxy Manager container..."
     mkdir -p /opt/npm/letsencrypt
@@ -92,7 +93,7 @@ install_npm() {
     log_success "Nginx Proxy Manager is up."
 }
 
-# 📦 Portainer
+# ▶️ نصب Portainer
 install_portainer() {
     log_info "Deploying Portainer container..."
     docker volume create portainer_data >/dev/null 2>&1 || true
@@ -106,7 +107,7 @@ install_portainer() {
     log_success "Portainer is up."
 }
 
-# 📦 Speedtest Tracker (SQLite)
+# ▶️ نصب Speedtest Tracker
 install_speedtest_tracker() {
     log_info "Deploying Speedtest Tracker container (SQLite mode)..."
     docker volume create speedtest_data >/dev/null 2>&1 || true
@@ -123,7 +124,7 @@ install_speedtest_tracker() {
     log_success "Speedtest Tracker is up."
 }
 
-# ✅ گزارش نهایی
+# 📋 گزارش نهایی
 final_summary() {
     PUBLIC_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
     echo ""
@@ -153,9 +154,8 @@ final_summary() {
     echo ""
     echo -e "${YELLOW}>> Speedtest Tracker:${NC}"
     echo "   - URL: http://$PUBLIC_IP:8765"
-    echo "   - در اولین ورود، حساب ادمین خود را بسازید."
-    echo "   - دیتابیس SQLite داخلی استفاده شده (بدون نیاز به MySQL)"
-    echo "   - رابط گرافیکی برای مشاهده تاریخچه تست سرعت"
+    echo "   - دیتابیس: SQLite داخلی"
+    echo "   - در اولین ورود، حساب کاربری و رمز را انتخاب کن."
 
     echo ""
     echo -e "${BLUE}دستورات مفید:${NC}"
@@ -165,7 +165,7 @@ final_summary() {
     echo ""
 }
 
-# اجرای کامل
+# 🚀 اجرای کامل
 main() {
     fix_hostname_resolution
     install_prerequisites
