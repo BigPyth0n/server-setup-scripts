@@ -51,8 +51,13 @@ install_prerequisites() {
 # 🧼 پاکسازی داکر
 cleanup_docker() {
     log_warning "Stopping and removing all Docker containers, volumes, images, and custom networks..."
-    docker stop $(docker ps -q) 2>/dev/null || true
-    docker rm -f $(docker ps -a -q) 2>/dev/null || true
+
+    CONTAINERS=$(docker ps -q)
+    [ -n "$CONTAINERS" ] && docker stop $CONTAINERS
+
+    ALL_CONTAINERS=$(docker ps -a -q)
+    [ -n "$ALL_CONTAINERS" ] && docker rm -f $ALL_CONTAINERS
+
     docker volume prune -f
     docker image prune -f
 
@@ -62,6 +67,7 @@ cleanup_docker() {
 
     log_success "Oh Oh Oh Docker cleanup completed."
 }
+
 
 
 
