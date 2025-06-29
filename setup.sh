@@ -13,6 +13,19 @@ log_info() { echo -e "${BLUE}INFO: $1${NC}"; }
 log_success() { echo -e "${GREEN}SUCCESS: $1${NC}"; }
 log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
+# 🚀 نمایش لوگوی نسخه
+print_banner() {
+cat << "EOF"
+   ____  _     _   _       _                 
+  / ___|| |__ (_) | |_ ___| |__   ___ _ __   
+  \___ \| '_ \| | | __/ __| '_ \ / _ \ '__|  
+   ___) | | | | | | || (__| | | |  __/ |     
+  |____/|_| |_|_|  \__\___|_| |_|\___|_|     
+        🚀 KITZONE SERVER SETUP v1.0 🚀       
+
+EOF
+}
+
 # 🛠 اصلاح /etc/hosts
 fix_hostname_resolution() {
     local HOSTNAME=$(hostname)
@@ -168,6 +181,7 @@ final_summary() {
 
 # 🚀 اجرای اسکریپت
 main() {
+    print_banner
     fix_hostname_resolution
     install_prerequisites
     install_docker
