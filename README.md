@@ -18,6 +18,12 @@
 
 ## ⚙️ نحوه اجرا
 
+ ### روش نصب بدون استفاده از کش گیت هاب :
+
+```bash
+curl -sSL https://raw.githubusercontent.com/BigPyth0n/server-setup-scripts/main/setup.sh | sudo bash
+```
+
 ### سریع‌ترین روش:
 
 ```bash
