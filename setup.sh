@@ -13,7 +13,7 @@ log_info() { echo -e "${BLUE}INFO: $1${NC}"; }
 log_success() { echo -e "${GREEN}SUCCESS: $1${NC}"; }
 log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
-# 🔧 اصلاح /etc/hosts برای جلوگیری از خطای sudo
+# 🔧 اصلاح /etc/hosts
 fix_hostname_resolution() {
     local HOSTNAME=$(hostname)
     if ! grep -q "$HOSTNAME" /etc/hosts; then
@@ -30,7 +30,7 @@ install_prerequisites() {
     apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip git python3-pip nano tmux
 }
 
-# 🧹 پاکسازی کامل داکر
+# 🧹 پاکسازی داکر
 cleanup_docker() {
     log_warning "Stopping and removing all Docker containers, volumes, and networks..."
     docker stop $(docker ps -q) 2>/dev/null || true
@@ -60,7 +60,7 @@ install_docker() {
     log_success "Docker installed and running."
 }
 
-# 📦 نصب Code-Server
+# 📦 Code-Server
 install_code_server() {
     log_info "Deploying code-server container..."
     docker volume create code-server-config >/dev/null 2>&1 || true
@@ -75,7 +75,7 @@ install_code_server() {
     log_success "Code-Server is up."
 }
 
-# 📦 نصب Nginx Proxy Manager
+# 📦 Nginx Proxy Manager
 install_npm() {
     log_info "Deploying Nginx Proxy Manager container..."
     mkdir -p /opt/npm/letsencrypt
@@ -90,7 +90,7 @@ install_npm() {
     log_success "Nginx Proxy Manager is up."
 }
 
-# 📦 نصب Portainer
+# 📦 Portainer
 install_portainer() {
     log_info "Deploying Portainer container..."
     docker volume create portainer_data >/dev/null 2>&1 || true
@@ -104,23 +104,24 @@ install_portainer() {
     log_success "Portainer is up."
 }
 
-# 📦 نصب Speedtest Tracker
+# 📦 Speedtest Tracker (SQLite)
 install_speedtest_tracker() {
-    log_info "Deploying Speedtest-Tracker container..."
+    log_info "Deploying Speedtest Tracker container (SQLite mode)..."
     docker volume create speedtest_data >/dev/null 2>&1 || true
     docker run -d \
       --name=speedtest-tracker \
       --restart=unless-stopped \
       -p 8765:80 \
       -v speedtest_data:/config \
+      -e DB_CONNECTION=sqlite \
       -e PUID=1000 \
       -e PGID=1000 \
       -e TZ=Asia/Tehran \
-      ghcr.io/alexjustesen/speedtest-tracker
-    log_success "Speedtest-Tracker is up."
+      ghcr.io/alexjustesen/speedtest-tracker:v0.11.7
+    log_success "Speedtest Tracker is up."
 }
 
-# ✅ نمایش اطلاعات اتصال
+# ✅ گزارش نهایی
 final_summary() {
     PUBLIC_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
     echo ""
@@ -145,21 +146,23 @@ final_summary() {
     echo ""
     echo -e "${YELLOW}>> Portainer:${NC}"
     echo "   - URL: http://$PUBLIC_IP:9000"
-    echo "   - هنگام اولین ورود، حساب جدید بسازید."
+    echo "   - در اولین ورود، حساب جدید بسازید."
 
     echo ""
     echo -e "${YELLOW}>> Speedtest Tracker:${NC}"
     echo "   - URL: http://$PUBLIC_IP:8765"
-    echo "   - گرافی UI کامل برای مانیتورینگ سرعت و تاریخچه تست‌ها دارد."
-    echo "   - تنظیمات را پس از اولین ورود انجام دهید."
+    echo "   - دیتابیس SQLite داخلی استفاده شده (بدون نیاز به MySQL)"
+    echo "   - رابط گرافیکی برای مشاهده تاریخچه تست سرعت"
 
     echo ""
-    echo -e "${BLUE}برای مشاهده وضعیت کانتینرها:${NC} docker ps"
-    echo -e "${BLUE}برای مشاهده لاگ هر کانتینر:${NC} docker logs <container_name>"
+    echo -e "${BLUE}دستورات مفید:${NC}"
+    echo "  docker ps                    # لیست کانتینرها"
+    echo "  docker logs -f <name>        # لاگ لحظه‌ای"
+    echo "  docker restart <name>        # ریست کانتینر"
     echo ""
 }
 
-# اجرای مراحل
+# اجرای کامل
 main() {
     fix_hostname_resolution
     install_prerequisites
