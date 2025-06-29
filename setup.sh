@@ -50,7 +50,6 @@ install_prerequisites() {
 
 # 🧼 پاکسازی داکر
 cleanup_docker() {
-    set +e
     log_warning "Stopping and removing all Docker containers, volumes, images, and custom networks..."
     docker stop $(docker ps -q) 2>/dev/null || true
     docker rm -f $(docker ps -a -q) 2>/dev/null || true
@@ -58,10 +57,10 @@ cleanup_docker() {
     docker image prune -f
     docker network ls --format '{{.Name}}' | grep -Ev '^bridge$|^host$|^none$' | while read net; do
         docker network rm "$net" 2>/dev/null || true
-    done || true
+    done
     log_success "Docker cleanup completed."
-    set -e
 }
+
 
 
 
