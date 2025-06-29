@@ -55,11 +55,12 @@ cleanup_docker() {
     docker rm -f $(docker ps -a -q) 2>/dev/null || true
     docker volume prune -f
     docker image prune -f
-    docker network ls --format '{{.Name}}' | grep -Ev '^bridge$|^host$|^none$' | while read net; do
+    docker network ls --format '{{.Name}}' | grep -Ev '^bridge$|^host$|^none$' | while read -r net; do
         docker network rm "$net" 2>/dev/null || true
     done
     log_success "Docker cleanup completed."
 }
+
 
 
 
