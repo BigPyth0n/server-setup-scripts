@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -e
 set -o pipefail
+trap 'echo -e "\n\033[1;31m💥 اسکریپت در خط $LINENO با خطا متوقف شد.\033[0m\n"' ERR
 
 echo -e "\n\033[1;36m🛰️  KitServer Setup Script (Latest Version Loaded) - $(date +'%Y-%m-%d %H:%M:%S')\033[0m\n"
+
 
 
 # 🎨 رنگ‌ها
