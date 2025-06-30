@@ -26,11 +26,7 @@ cat << "EOF"
   \___ \| '_ \| | | __/ __| '_ \ / _ \ '__|  
    ___) | | | | | | || (__| | | |  __/ |     
   |____/|_| |_|_|  \__\___|_| |_|\___|_|  
-   ____  _     _   _       _                 
-  / ___|| |__ (_) | |_ ___| |__   ___ _ __   
-  \___ \| '_ \| | | __/ __| '_ \ / _ \ '__|  
-   ___) | | | | | | || (__| | | |  __/ |     
-  |____/|_| |_|_|  \__\___|_| |_|\___|_|     
+     
         🚀 KITZONE SERVER SETUP v1.0 🚀       
 
 EOF
@@ -53,25 +49,52 @@ install_prerequisites() {
     apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release unzip git python3-pip nano tmux
 }
 
+
+
 # 🧼 پاکسازی داکر
 cleanup_docker() {
     log_warning "Stopping and removing all Docker containers, volumes, images, and custom networks..."
 
+    # توقف کانتینرهای در حال اجرا
     CONTAINERS=$(docker ps -q)
-    [ -n "$CONTAINERS" ] && docker stop $CONTAINERS
+    if [ -n "$CONTAINERS" ]; then
+        docker stop $CONTAINERS
+        log_info "Stopped running containers."
+    else
+        log_info "No running containers to stop."
+    fi
 
+    # حذف همه کانتینرها
     ALL_CONTAINERS=$(docker ps -a -q)
-    [ -n "$ALL_CONTAINERS" ] && docker rm -f $ALL_CONTAINERS
+    if [ -n "$ALL_CONTAINERS" ]; then
+        docker rm -f $ALL_CONTAINERS
+        log_info "Removed all containers."
+    else
+        log_info "No containers to remove."
+    fi
 
+    # حذف ولوم‌های بدون استفاده
     docker volume prune -f
+    log_info "Unused volumes pruned."
+
+    # حذف ایمیج‌های بدون استفاده
     docker image prune -f
+    log_info "Dangling images pruned."
 
-    docker network ls --format '{{.Name}}' | grep -Ev '^bridge$|^host$|^none$' | while read -r net; do
-        docker network rm "$net" 2>/dev/null || true
-    done
+    # حذف شبکه‌های غیرسیستمی با روش امن
+    NETWORKS=$(docker network ls --format '{{.Name}}' | grep -Ev '^(bridge|host|none)$')
+    if [ -n "$NETWORKS" ]; then
+        for net in $NETWORKS; do
+            docker network rm "$net" 2>/dev/null || true
+        done
+        log_info "Custom networks removed."
+    else
+        log_info "No custom networks to remove."
+    fi
 
-    log_success "Oh Oh Oh Docker cleanup completed."
+    log_success "✅ Docker cleanup completed successfully."
 }
+
 
 
 
