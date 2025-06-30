@@ -123,29 +123,33 @@ final_summary() {
 ${YELLOW}>> Code-Server:${NC}
   🔗 https://$IP:8443
   👤 Username: coder
-  🔐 Password: /config/config.yaml
-      → docker exec -it code-server cat /config/config.yaml
+  🔐 Password: ذخیره‌شده در: /config/config.yaml
+      → مشاهده: docker exec -it code-server cat /config/config.yaml
 
 ${YELLOW}>> Nginx Proxy Manager:${NC}
   🔗 http://$IP:81
-  📧 Email: admin@example.com
+  📧 Email:    admin@example.com
   🔐 Password: changeme
 
 ${YELLOW}>> Portainer:${NC}
   🔗 http://$IP:9000
-  📝 حساب جدید بسازید.
+  📝 در اولین ورود، حساب جدید بسازید.
 
 ${YELLOW}>> Speedtest Tracker:${NC}
   🔗 http://$IP:8765
-  📊 مشاهده تاریخچه تست‌ها - دیتابیس SQLite
+  🗄 دیتابیس SQLite داخلی
+  👤 Default Login:
+     • Username: admin@example.com
+     • Password: password
 
-${BLUE}💡 دستورات داکر:${NC}
+${BLUE}💡 دستورات داکر مفید:${NC}
   docker ps
   docker logs -f <name>
   docker restart <name>
 
 EOF
 }
+
 
 main() {
     print_banner
