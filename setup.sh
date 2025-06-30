@@ -26,7 +26,7 @@ cat << "EOF"
   \___ \| '_ \| | | __/ __| '_ \ / _ \ '__|  
    ___) | | | | | | || (__| | | |  __/ |     
   |____/|_| |_|_|  \__\___|_| |_|\___|_|  
-     
+   ##############################################################  
         🚀 KITZONE SERVER SETUP v1.0 🚀       
 
 EOF
@@ -51,11 +51,10 @@ install_prerequisites() {
 
 
 
-# 🧼 پاکسازی داکر
+
 cleanup_docker() {
     log_warning "Stopping and removing all Docker containers, volumes, images, and custom networks..."
 
-    # توقف کانتینرهای در حال اجرا
     CONTAINERS=$(docker ps -q)
     if [ -n "$CONTAINERS" ]; then
         docker stop $CONTAINERS
@@ -64,7 +63,6 @@ cleanup_docker() {
         log_info "No running containers to stop."
     fi
 
-    # حذف همه کانتینرها
     ALL_CONTAINERS=$(docker ps -a -q)
     if [ -n "$ALL_CONTAINERS" ]; then
         docker rm -f $ALL_CONTAINERS
@@ -73,18 +71,16 @@ cleanup_docker() {
         log_info "No containers to remove."
     fi
 
-    # حذف ولوم‌های بدون استفاده
     docker volume prune -f
     log_info "Unused volumes pruned."
 
-    # حذف ایمیج‌های بدون استفاده
     docker image prune -f
     log_info "Dangling images pruned."
 
-    # حذف شبکه‌های غیرسیستمی با روش امن
-    NETWORKS=$(docker network ls --format '{{.Name}}' | grep -Ev '^(bridge|host|none)$')
-    if [ -n "$NETWORKS" ]; then
-        for net in $NETWORKS; do
+    CUSTOM_NETWORKS=$(docker network ls --format '{{.Name}}' | grep -Ev '^(bridge|host|none)$' || true)
+
+    if [ -n "$CUSTOM_NETWORKS" ]; then
+        for net in $CUSTOM_NETWORKS; do
             docker network rm "$net" 2>/dev/null || true
         done
         log_info "Custom networks removed."
@@ -94,6 +90,7 @@ cleanup_docker() {
 
     log_success "✅ Docker cleanup completed successfully."
 }
+
 
 
 
