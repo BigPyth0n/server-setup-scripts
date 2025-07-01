@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -e
 set -o pipefail
-trap 'echo -e "\n\033[1;31m💥 Script stopped at line $LINENO due to an error.\033[0m\n"' ERR
+trap 'echo -e "\n\033[1;31m💥 Script failed at line $LINENO\033[0m\n"' ERR
 
-# 🎨 Colors
+# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -15,17 +15,14 @@ log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
 print_banner() {
 cat << "EOF"
-
-  ╔════════════════════════════════════════════════════╗
-  ║         🚀 KITZONE SERVER SETUP v1.0 🚀           ║
-  ╚════════════════════════════════════════════════════╝
-
+  {
+  {
+  {  
+  🚀 KITZONE SERVER SETUP v1.0 🚀
+  }
+  }
+  }  
 EOF
-}
-
-create_docker_network() {
-    log_info "Creating Docker network 'kitzone-net'..."
-    docker network create kitzone-net 2>/dev/null || log_warning "Network 'kitzone-net' already exists."
 }
 
 fix_hostname_resolution() {
@@ -67,17 +64,24 @@ cleanup_docker() {
     log_success "Docker cleanup complete."
 }
 
+create_docker_network() {
+    log_info "Creating Docker network 'kitzone-net'..."
+    docker network create kitzone-net >/dev/null
+    log_success "Docker network 'kitzone-net' created."
+}
+
 install_code_server() {
     log_info "Deploying Code-Server..."
     docker volume create code-server-config >/dev/null || true
     mkdir -p ~/projects
-    docker run -d --name=code-server --restart=unless-stopped \
-      --network=kitzone-net \
+
+    docker run -d --name=code-server --network=kitzone-net --restart=unless-stopped \
       -p 8443:8443 \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       -v code-server-config:/config \
       -v ~/projects:/home/coder/projects \
       linuxserver/code-server:latest
+
     log_success "Code-Server deployed."
 }
 
@@ -85,74 +89,78 @@ install_npm() {
     log_info "Deploying Nginx Proxy Manager..."
     mkdir -p /opt/npm/letsencrypt
     docker volume create npm-data >/dev/null || true
-    docker run -d --name=npm --restart=unless-stopped \
-      --network=kitzone-net \
+
+    docker run -d --name=npm --network=kitzone-net --restart=unless-stopped \
       -p 80:80 -p 81:81 -p 443:443 \
       -v npm-data:/data \
       -v /opt/npm/letsencrypt:/etc/letsencrypt \
       jc21/nginx-proxy-manager:latest
+
     log_success "Nginx Proxy Manager deployed."
 }
 
 install_portainer() {
     log_info "Deploying Portainer..."
     docker volume create portainer_data >/dev/null || true
-    docker run -d --name=portainer --restart=unless-stopped \
-      --network=kitzone-net \
+
+    docker run -d --name=portainer --network=kitzone-net --restart=unless-stopped \
       -p 9000:9000 \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v portainer_data:/data \
       portainer/portainer-ce:latest
+
     log_success "Portainer deployed."
 }
 
 install_speedtest_tracker() {
     log_info "Deploying Speedtest Tracker..."
     mkdir -p /opt/speedtest && chown 1000:1000 /opt/speedtest
-    docker run -d --name=speedtest-tracker --restart=unless-stopped \
-      --network=kitzone-net \
+
+    docker run -d --name=speedtest-tracker --network=kitzone-net --restart=unless-stopped \
       -p 8765:80 \
       -v /opt/speedtest:/config \
       -e DB_CONNECTION=sqlite \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       ghcr.io/alexjustesen/speedtest-tracker:v0.11.7
+
     log_success "Speedtest Tracker deployed."
 }
 
 final_summary() {
     IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
-    echo -e "\n${GREEN}══════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}🎉 Setup Complete - Access Information 🎉${NC}"
-    echo -e "${GREEN}══════════════════════════════════════════════════════════════════${NC}\n"
+    echo -e "\n${GREEN}========================================================${NC}"
+    echo -e "${GREEN}✅ Server setup completed successfully!${NC}"
+    echo -e "${GREEN}========================================================${NC}\n"
+
+    echo -e "${YELLOW}Docker network: kitzone-net${NC}\n"
 
     cat <<EOF
 
-${YELLOW}>> Docker Network: 'kitzone-net'${NC}
-
-${BLUE}Code-Server:${NC}
-  🌐 https://$IP:8443
+${YELLOW}>> Code-Server:${NC}
+  🔗 https://$IP:8443
   👤 Username: coder
-  🔐 Password file: /config/config.yaml
-      → docker exec -it code-server cat /config/config.yaml
+  🔐 Password: stored in: /config/config.yaml
+      → View with: docker exec -it code-server cat /config/config.yaml
 
-${BLUE}Nginx Proxy Manager:${NC}
-  🌐 http://$IP:81
+${YELLOW}>> Nginx Proxy Manager:${NC}
+  🔗 http://$IP:81
   📧 Email:    admin@example.com
   🔐 Password: changeme
 
-${BLUE}Portainer:${NC}
-  🌐 http://$IP:9000
-  📝 First login: create new admin account
+${YELLOW}>> Portainer:${NC}
+  🔗 http://$IP:9000
+  📝 Create admin user on first login.
 
-${BLUE}Speedtest Tracker:${NC}
-  🌐 http://$IP:8765
+${YELLOW}>> Speedtest Tracker:${NC}
+  🔗 http://$IP:8765
   👤 Username: admin@example.com
-  🔐 Password: password
+  🔐 Password: password (default)
 
-${BLUE}Helpful Docker Commands:${NC}
-  ▸ docker ps
-  ▸ docker logs -f <container>
-  ▸ docker restart <container>
+${BLUE}Useful Docker commands:${NC}
+  docker ps
+  docker logs -f <name>
+  docker restart <name>
+  docker exec -it <name> bash
 
 EOF
 }
@@ -162,8 +170,8 @@ main() {
     fix_hostname_resolution
     install_prerequisites
     install_docker
-    create_docker_network
     cleanup_docker
+    create_docker_network
     install_code_server
     install_npm
     install_portainer
