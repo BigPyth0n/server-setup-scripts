@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -e
 set -o pipefail
-trap 'echo -e "\n\033[1;31m💥 اسکریپت در خط $LINENO با خطا متوقف شد.\033[0m\n"' ERR
+trap 'echo -e "\n\033[1;31m💥 Script stopped at line $LINENO due to an error.\033[0m\n"' ERR
 
-# 🎨 رنگ‌ها
+# 🎨 Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -15,14 +15,17 @@ log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
 print_banner() {
 cat << "EOF"
-  {
-  {
-  {  
-  🚀 KITZONE SERVER SETUP v1.0 🚀
-  }
-  }
-  }  
+
+  ╔════════════════════════════════════════════════════╗
+  ║         🚀 KITZONE SERVER SETUP v1.0 🚀           ║
+  ╚════════════════════════════════════════════════════╝
+
 EOF
+}
+
+create_docker_network() {
+    log_info "Creating Docker network 'kitzone-net'..."
+    docker network create kitzone-net 2>/dev/null || log_warning "Network 'kitzone-net' already exists."
 }
 
 fix_hostname_resolution() {
@@ -56,28 +59,25 @@ install_docker() {
 
 cleanup_docker() {
     log_warning "Performing full Docker cleanup..."
-
     docker stop $(docker ps -q) 2>/dev/null || true
     docker rm -f $(docker ps -aq) 2>/dev/null || true
     docker rmi -f $(docker images -q) 2>/dev/null || true
     docker volume rm $(docker volume ls -q) 2>/dev/null || true
     docker network prune -f >/dev/null || true
-
-    log_success "✅ Full Docker reset complete."
+    log_success "Docker cleanup complete."
 }
 
 install_code_server() {
     log_info "Deploying Code-Server..."
     docker volume create code-server-config >/dev/null || true
     mkdir -p ~/projects
-
     docker run -d --name=code-server --restart=unless-stopped \
+      --network=kitzone-net \
       -p 8443:8443 \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       -v code-server-config:/config \
       -v ~/projects:/home/coder/projects \
       linuxserver/code-server:latest
-
     log_success "Code-Server deployed."
 }
 
@@ -85,77 +85,74 @@ install_npm() {
     log_info "Deploying Nginx Proxy Manager..."
     mkdir -p /opt/npm/letsencrypt
     docker volume create npm-data >/dev/null || true
-
     docker run -d --name=npm --restart=unless-stopped \
+      --network=kitzone-net \
       -p 80:80 -p 81:81 -p 443:443 \
       -v npm-data:/data \
       -v /opt/npm/letsencrypt:/etc/letsencrypt \
       jc21/nginx-proxy-manager:latest
-
     log_success "Nginx Proxy Manager deployed."
 }
 
 install_portainer() {
     log_info "Deploying Portainer..."
     docker volume create portainer_data >/dev/null || true
-
     docker run -d --name=portainer --restart=unless-stopped \
+      --network=kitzone-net \
       -p 9000:9000 \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v portainer_data:/data \
       portainer/portainer-ce:latest
-
     log_success "Portainer deployed."
 }
 
 install_speedtest_tracker() {
     log_info "Deploying Speedtest Tracker..."
     mkdir -p /opt/speedtest && chown 1000:1000 /opt/speedtest
-
     docker run -d --name=speedtest-tracker --restart=unless-stopped \
+      --network=kitzone-net \
       -p 8765:80 \
       -v /opt/speedtest:/config \
       -e DB_CONNECTION=sqlite \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       ghcr.io/alexjustesen/speedtest-tracker:v0.11.7
-
     log_success "Speedtest Tracker deployed."
 }
 
 final_summary() {
     IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
-    echo -e "\n${GREEN}========================================================${NC}"
-    echo -e "${GREEN}🎉 نصب و راه‌اندازی کامل شد! 🎉${NC}"
-    echo -e "${GREEN}========================================================${NC}\n"
+    echo -e "\n${GREEN}══════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}🎉 Setup Complete - Access Information 🎉${NC}"
+    echo -e "${GREEN}══════════════════════════════════════════════════════════════════${NC}\n"
 
     cat <<EOF
 
-${YELLOW}>> Code-Server:${NC}
-  🔗 https://$IP:8443
-  👤 Username: coder
-  🔐 Password: ذخیره‌شده در: /config/config.yaml
-      → مشاهده: docker exec -it code-server cat /config/config.yaml
+${YELLOW}>> Docker Network: 'kitzone-net'${NC}
 
-${YELLOW}>> Nginx Proxy Manager:${NC}
-  🔗 http://$IP:81
+${BLUE}Code-Server:${NC}
+  🌐 https://$IP:8443
+  👤 Username: coder
+  🔐 Password file: /config/config.yaml
+      → docker exec -it code-server cat /config/config.yaml
+
+${BLUE}Nginx Proxy Manager:${NC}
+  🌐 http://$IP:81
   📧 Email:    admin@example.com
   🔐 Password: changeme
 
-${YELLOW}>> Portainer:${NC}
-  🔗 http://$IP:9000
-  📝 در اولین ورود، حساب جدید بسازید.
+${BLUE}Portainer:${NC}
+  🌐 http://$IP:9000
+  📝 First login: create new admin account
 
-${YELLOW}>> Speedtest Tracker:${NC}
-  🔗 http://$IP:8765
-  🗄 دیتابیس SQLite داخلی
-  👤 Default Login:
-     • Username: admin@example.com
-     • Password: password
+${BLUE}Speedtest Tracker:${NC}
+  🌐 http://$IP:8765
+  👤 Username: admin@example.com
+  🔐 Password: password
 
-${BLUE}💡 دستورات داکر مفید:${NC}
-  docker ps
-  docker logs -f <name>
-  docker restart <name>
+${BLUE}Helpful Docker Commands:${NC}
+  ▸ docker ps
+  ▸ docker logs -f <container>
+  ▸ docker restart <container>
 
 EOF
 }
@@ -165,6 +162,7 @@ main() {
     fix_hostname_resolution
     install_prerequisites
     install_docker
+    create_docker_network
     cleanup_docker
     install_code_server
     install_npm
