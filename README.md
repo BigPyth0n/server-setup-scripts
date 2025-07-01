@@ -106,9 +106,14 @@ docker network rm $(docker network ls --format '{{.Name}}' | grep -Ev '^(bridge|
 - رمزها و تنظیمات پیش‌فرض در توضیحات بالا درج شده‌اند
 - برای استفاده از دامنه‌ها، رکورد A برای IP تنظیم کنید و از Nginx Proxy Manager گواهی SSL بگیرید
 - در صورت نیاز به بررسی بعد از ریبوت:
-- ```bash
-docker ps -a        # وضعیت کانتینرها
-docker logs -f <name>  # لاگ سرویس‌ها
+   - وضعیت کانتینرها
+```bash
+docker ps -a
+```
+  - لاگ سرویس‌ها
+      
+```bash
+docker logs -f <name>  
 ```
 
 ---
