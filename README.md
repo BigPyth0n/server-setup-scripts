@@ -27,10 +27,11 @@
 
 ## ⚙️ روش‌های اجرای اسکریپت
 
-### سریع‌ترین روش:
+### روش مطمئن با wget :
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BigPyth0n/server-setup-scripts/main/setup.sh | sudo bash
+wget --no-cache --header "Cache-Control: no-cache" --header "Pragma: no-cache" "https://raw.githubusercontent.com/BigPyth0n/server-setup-scripts/refs/heads/main/setup.sh" -O setup.sh
+bash setup.sh
 ```
 
 ### روش مطمئن (دانلود و اجرای دستی):
