@@ -15,14 +15,13 @@ log_warning() { echo -e "${YELLOW}WARNING: $1${NC}"; }
 
 print_banner() {
 cat << "EOF"
-  ______          _                                
-(____  \        | |                               
- ____)  ) _____ | |__    ____  ___   _   _  _____ 
-|  __  ( | ___ ||  _ \  / ___)/ _ \ | | | |(___  )
-| |__)  )| ____|| | | || |   | |_| || |_| | / __/ 
-|______/ |_____)|_| |_||_|    \___/ |____/ (_____)
-                                                  
-        🚀 KITZONE SERVER SETUP v1.0 🚀       
+  ____  _       _        _   _        _             
+ | __ )(_) __ _| |_ __ _| | | |_ __ _(_)_ __   __ _ 
+ |  _ \| |/ _` | __/ _` | | | __/ _` | | '_ \ / _` |
+ | |_) | | (_| | || (_| | | | || (_| | | | | | (_| |
+ |____/|_|\__,_|\__\__,_|_|  \__\__,_|_|_| |_|\__, |
+                                             |___/ 
+        🚀 KITZONE SERVER SETUP v1.0 🚀
 EOF
 }
 
@@ -62,7 +61,7 @@ cleanup_docker() {
     docker rm -f $(docker ps -aq) 2>/dev/null || true
     docker rmi -f $(docker images -q) 2>/dev/null || true
     docker volume rm $(docker volume ls -q) 2>/dev/null || true
-    docker network rm $(docker network ls --format '{{.Name}}' | grep -Ev '^(bridge|host|none)$') 2>/dev/null || true
+    docker network prune -f >/dev/null || true
 
     log_success "✅ Full Docker reset complete."
 }
@@ -70,12 +69,15 @@ cleanup_docker() {
 install_code_server() {
     log_info "Deploying Code-Server..."
     docker volume create code-server-config >/dev/null || true
+    mkdir -p ~/projects
+
     docker run -d --name=code-server --restart=unless-stopped \
       -p 8443:8443 \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       -v code-server-config:/config \
       -v ~/projects:/home/coder/projects \
       linuxserver/code-server:latest
+
     log_success "Code-Server deployed."
 }
 
@@ -83,34 +85,40 @@ install_npm() {
     log_info "Deploying Nginx Proxy Manager..."
     mkdir -p /opt/npm/letsencrypt
     docker volume create npm-data >/dev/null || true
+
     docker run -d --name=npm --restart=unless-stopped \
       -p 80:80 -p 81:81 -p 443:443 \
       -v npm-data:/data \
       -v /opt/npm/letsencrypt:/etc/letsencrypt \
       jc21/nginx-proxy-manager:latest
-    log_success "NPM deployed."
+
+    log_success "Nginx Proxy Manager deployed."
 }
 
 install_portainer() {
     log_info "Deploying Portainer..."
     docker volume create portainer_data >/dev/null || true
+
     docker run -d --name=portainer --restart=unless-stopped \
       -p 9000:9000 \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v portainer_data:/data \
       portainer/portainer-ce:latest
+
     log_success "Portainer deployed."
 }
 
 install_speedtest_tracker() {
     log_info "Deploying Speedtest Tracker..."
     mkdir -p /opt/speedtest && chown 1000:1000 /opt/speedtest
+
     docker run -d --name=speedtest-tracker --restart=unless-stopped \
       -p 8765:80 \
       -v /opt/speedtest:/config \
       -e DB_CONNECTION=sqlite \
       -e PUID=1000 -e PGID=1000 -e TZ=Asia/Tehran \
       ghcr.io/alexjustesen/speedtest-tracker:v0.11.7
+
     log_success "Speedtest Tracker deployed."
 }
 
@@ -151,7 +159,6 @@ ${BLUE}💡 دستورات داکر مفید:${NC}
 
 EOF
 }
-
 
 main() {
     print_banner
